@@ -1,0 +1,172 @@
+// ----------------------------------------------------------
+// Vertex programs
+// ----------------------------------------------------------
+
+vertex_program ToonShadingVP_hlsl hlsl
+{
+	source ToonShading.hlsl
+	entry_point ToonShadingVS
+	target vs_3_0
+
+	default_params
+	{
+		param_named_auto lightPosition light_position_object_space 0
+		param_named_auto eyePosition camera_position_object_space
+		param_named_auto worldViewProj worldviewproj_matrix
+		
+		param_named shininess float 10 
+	}
+}
+
+vertex_program ToonShadingVP unified
+{
+	delegate ToonShadingVP_hlsl
+}
+
+vertex_program SobelFilterVS_hlsl hlsl
+{
+    source SobelFilter.hlsl
+    entry_point SobelFilterVS
+    target vs_3_0
+
+	default_params
+    {
+		param_named_auto worldMatrix world_matrix
+		param_named_auto viewMatrix	view_matrix
+		param_named_auto projMatrix	projection_matrix
+    }
+}
+
+vertex_program SobelFilterVS unified
+{
+	delegate SobelFilterVS_hlsl
+}
+
+
+// ----------------------------------------------------------
+// Fragment programs
+// ----------------------------------------------------------
+
+fragment_program ToonShadingFP_hlsl hlsl
+{
+	source ToonShading.hlsl
+	entry_point ToonShadingPS
+	target ps_3_0
+}
+
+fragment_program ToonShadingFP unified
+{
+	delegate ToonShadingFP_hlsl
+}
+
+fragment_program SobelFilterPS_hlsl hlsl
+{
+    source SobelFilter.hlsl
+    entry_point SobelFilterPS
+    target ps_3_0
+
+	default_params
+    {
+		param_named_auto ViewportWidth viewport_width
+		param_named_auto ViewportHeight viewport_height
+    }
+}
+
+fragment_program SobelFilterPS unified
+{
+	delegate SobelFilterPS_hlsl
+}
+
+
+// ----------------------------------------------------------
+// Material
+// ----------------------------------------------------------
+
+material ToonShading
+{
+	technique
+	{
+		pass
+		{
+			vertex_program_ref ToonShadingVP
+			{
+				// Get shininess from custom renderable param 1
+				param_named_auto shininess custom 1
+			}
+
+			fragment_program_ref ToonShadingFP
+			{
+				// Get diffusive component from custom renderable param 2
+				param_named_auto diffusiveComponent custom 2
+				
+				// Get specular component from custom renderable param 2
+				param_named_auto specularComponent custom 3
+			}
+
+			texture_unit
+			{
+				texture cel_shading_diffuse.png 1d
+				tex_address_mode clamp
+				filtering none
+			}
+
+			texture_unit
+			{
+				texture cel_shading_specular.png 1d
+				tex_address_mode clamp
+				filtering none
+			}
+		}
+	}
+}
+
+material ToonShadingCompositor/EdgeFilter
+{
+	technique
+	{
+        pass
+        {
+			vertex_program_ref SobelFilterVS
+			{
+			}
+
+            fragment_program_ref SobelFilterPS
+            {
+            }
+
+			texture_unit
+			{
+			}
+        }
+	}
+}
+
+
+// ----------------------------------------------------------
+// Compositor
+// ----------------------------------------------------------
+
+compositor ToonShadingCompositor
+{
+	technique
+	{
+		texture scene target_width target_height PF_A8R8G8B8
+
+		target scene
+		{
+			input previous
+		}
+
+		target_output
+		{
+			pass render_quad
+			{
+				material ToonShadingCompositor/EdgeFilter
+				input 0 scene
+			}
+		}
+	}
+}
+
+
+

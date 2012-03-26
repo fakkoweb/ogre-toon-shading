@@ -130,7 +130,7 @@ void BaseApplication::createFrameListener(void)
     mTrayMgr = new OgreBites::SdkTrayManager("InterfaceName", mWindow, mMouse, this);
     mTrayMgr->showFrameStats(OgreBites::TL_BOTTOMLEFT);
     mTrayMgr->showLogo(OgreBites::TL_BOTTOMRIGHT);
-    mTrayMgr->hideCursor();
+    //mTrayMgr->hideCursor();
 
     // create a params panel for displaying sample details
     Ogre::StringVector items;
@@ -150,6 +150,13 @@ void BaseApplication::createFrameListener(void)
     mDetailsPanel->setParamValue(9, "Bilinear");
     mDetailsPanel->setParamValue(10, "Solid");
     mDetailsPanel->hide();
+
+	// create a check box to toggle light movement
+	mMoveLight = mTrayMgr->createCheckBox(OgreBites::TL_TOPLEFT, "MoveLight", "Move Light");
+	mMoveLight->setChecked(true);
+	mMoveLight->show();
+
+	mTrayMgr->showCursor();
 
     mRoot->addFrameListener(this);
 }

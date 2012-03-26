@@ -43,7 +43,7 @@ void OgreApp::createScene(void)
 
 	// Create our model, give it the shader material, and place it at the origin
 	Ogre::Entity* head = mSceneMgr->createEntity("Head", "ogrehead.mesh");
-	head->setMaterialName("ToonShading");
+	head->setMaterialName("CelShading");
 	mSceneMgr->getRootSceneNode()->attachObject(head);
 
 	/* We set the same material for all parts of the head, but use custom shader parameters to set the
@@ -76,10 +76,10 @@ void OgreApp::createScene(void)
 	sub->setCustomParameter(SP_SPECULAR,	Ogre::Vector4(1.0f,		1.0f,	1.0f,	1.0f));
 
 	// Set our compositor (based on a sobel filter, in order to detect edges)
-	Ogre::Viewport *viewPort = mCamera->getViewport();
+	//Ogre::Viewport *viewPort = mCamera->getViewport();
 
-	Ogre::CompositorManager::getSingleton().addCompositor(viewPort, "ToonShadingCompositor");
-	Ogre::CompositorManager::getSingleton().setCompositorEnabled(viewPort, "ToonShadingCompositor", true);
+	//Ogre::CompositorManager::getSingleton().addCompositor(viewPort, "ToonShadingCompositor");
+	//Ogre::CompositorManager::getSingleton().setCompositorEnabled(viewPort, "ToonShadingCompositor", true);
 }
 
 //-------------------------------------------------------------------------------------

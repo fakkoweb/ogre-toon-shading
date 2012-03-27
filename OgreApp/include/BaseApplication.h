@@ -73,6 +73,8 @@ protected:
     //Unattach OIS before window shutdown (very important under Linux)
     virtual void windowClosed(Ogre::RenderWindow* rw);
 
+	virtual void setDragLook(bool enabled); 
+
     Ogre::Root *mRoot;
     Ogre::Camera* mCamera;
     Ogre::SceneManager* mSceneMgr;
@@ -85,8 +87,6 @@ protected:
     OgreBites::SdkCameraMan* mCameraMan;     // basic camera controller
     OgreBites::ParamsPanel* mDetailsPanel;   // sample details panel
 
-	OgreBites::CheckBox* mMoveLight;
-
     bool mCursorWasVisible;                  // was cursor visible before dialog appeared
     bool mShutDown;
 
@@ -94,6 +94,8 @@ protected:
     OIS::InputManager* mInputManager;
     OIS::Mouse*    mMouse;
     OIS::Keyboard* mKeyboard;
+
+	bool mDragLook;                     // click and drag to free-look
 };
 
 #endif // #ifndef __BaseApplication_h_

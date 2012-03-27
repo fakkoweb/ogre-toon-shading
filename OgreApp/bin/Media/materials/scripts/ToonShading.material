@@ -10,11 +10,9 @@ vertex_program ToonShadingVP_hlsl hlsl
 
 	default_params
 	{
-		param_named_auto lightPosition light_position_object_space 0
-		param_named_auto eyePosition camera_position_object_space
-		param_named_auto worldViewProj worldviewproj_matrix
-		
-		param_named shininess float 10 
+		param_named_auto worldMatrix world_matrix
+		param_named_auto viewMatrix	view_matrix
+		param_named_auto projMatrix	projection_matrix
 	}
 }
 
@@ -31,9 +29,7 @@ vertex_program SobelFilterVS_hlsl hlsl
 
 	default_params
     {
-		param_named_auto worldMatrix world_matrix
-		param_named_auto viewMatrix	view_matrix
-		param_named_auto projMatrix	projection_matrix
+		param_named_auto worldViewProj worldviewproj_matrix
     }
 }
 
@@ -52,6 +48,13 @@ fragment_program ToonShadingFP_hlsl hlsl
 	source ToonShading.hlsl
 	entry_point ToonShadingPS
 	target ps_3_0
+
+	default_params
+	{
+		param_named_auto lightPosition light_position 0
+
+		param_named defaultColor float4 1.0f 1.0f 1.0f 1.0f
+	}
 }
 
 fragment_program ToonShadingFP unified
@@ -67,8 +70,11 @@ fragment_program SobelFilterPS_hlsl hlsl
 
 	default_params
     {
-		param_named_auto ViewportWidth viewport_width
-		param_named_auto ViewportHeight viewport_height
+		param_named_auto viewportWidth viewport_width
+		param_named_auto viewportHeight viewport_height
+
+		param_named thickness float 4.0f
+		param_named threshold float 0.4f
     }
 }
 
@@ -79,7 +85,7 @@ fragment_program SobelFilterPS unified
 
 
 // ----------------------------------------------------------
-// Material
+// Materials
 // ----------------------------------------------------------
 
 material ToonShading
@@ -90,30 +96,17 @@ material ToonShading
 		{
 			vertex_program_ref ToonShadingVP
 			{
-				// Get shininess from custom renderable param 1
-				param_named_auto shininess custom 1
 			}
 
 			fragment_program_ref ToonShadingFP
 			{
-				// Get diffusive component from custom renderable param 2
-				param_named_auto diffusiveComponent custom 2
-				
-				// Get specular component from custom renderable param 2
-				param_named_auto specularComponent custom 3
+				// Get default color from custom renderable param 1
+				param_named_auto defaultColor custom 1
 			}
 
 			texture_unit
 			{
-				texture cel_shading_diffuse.png 1d
-				tex_address_mode clamp
-				filtering none
-			}
-
-			texture_unit
-			{
-				texture cel_shading_specular.png 1d
-				tex_address_mode clamp
+				texture gradient.png
 				filtering none
 			}
 		}
@@ -132,6 +125,11 @@ material ToonShadingCompositor/EdgeFilter
 
             fragment_program_ref SobelFilterPS
             {
+				// Get edge thickness from custom renderable param 1
+				param_named_auto thickness custom 1
+
+				// Get edge threshold from custom renderable param 2
+				param_named_auto threshold custom 2
             }
 
 			texture_unit
@@ -150,7 +148,7 @@ compositor ToonShadingCompositor
 {
 	technique
 	{
-		texture scene target_width target_height PF_A8R8G8B8
+		texture scene target_width target_height PF_R8G8B8
 
 		target scene
 		{
@@ -159,6 +157,8 @@ compositor ToonShadingCompositor
 
 		target_output
 		{
+			input none
+
 			pass render_quad
 			{
 				material ToonShadingCompositor/EdgeFilter

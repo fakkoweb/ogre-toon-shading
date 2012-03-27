@@ -33,9 +33,51 @@ public:
 protected:
 
 	virtual void createScene(void);
-	virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt);
+	virtual void createFrameListener(void);
 
-	Ogre::SceneNode* mLightPivot;
+	bool frameRenderingQueued(const Ogre::FrameEvent& evt);
+
+	virtual bool keyPressed(const OIS::KeyEvent &arg);
+
+	virtual void sliderMoved(OgreBites::Slider* slider);
+
+	Ogre::Viewport*			mViewport;
+
+	Ogre::SceneNode*		mLightPivot;
+	Ogre::Entity*			mHead;
+
+	OgreBites::ParamsPanel* mTechniqueDetail;
+	OgreBites::CheckBox*	mMoveLight;
+
+	OgreBites::Slider*		mThicknessSlider;
+	OgreBites::Slider*		mThresholdSlider;
+
+	enum Techniques { 
+		CELSHADING,  
+		SOBEL_FILTER 
+	} mCurrentTechnique;
+
+	class SobelListener : public Ogre::CompositorInstance::Listener
+	{
+	private:
+
+		float mThickness;
+		float mThreshold;
+
+	public:
+
+		SobelListener();
+
+		void notifyMaterialRender(Ogre::uint32 pass_id, Ogre::MaterialPtr &mat);
+
+		void setThickness(float thickness);
+		float getThickness() const;
+
+		void setThreshold(float threshold);
+		float getThreshold() const;
+	};
+
+	SobelListener*			mSobelListener;
 };
 
 #endif // #ifndef __OgreApp_h_

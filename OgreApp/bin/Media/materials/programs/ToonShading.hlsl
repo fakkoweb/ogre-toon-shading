@@ -2,14 +2,19 @@
 // Global variables
 // ----------------------------------------------------------
 
-uniform extern float4x4	worldViewProj;
+// World, view and projection matrices
+uniform extern float4x4		worldMatrix;
+uniform extern float4x4		viewMatrix;
+uniform extern float4x4		projMatrix;
 
-// Light position in object space
-uniform extern float3	lightPosition;
-// Eye position in object space
-uniform extern float3	eyePosition;
-// Shininess parameter
-uniform extern float4	shininess;
+// Light position in world space
+uniform extern float3		lightPosition;
+
+// Camera position in world space
+// uniform extern float3	cameraPosition;
+
+// Default material color
+uniform extern float4		defaultColor;
 
 
 // ----------------------------------------------------------
@@ -19,20 +24,19 @@ uniform extern float4	shininess;
 struct VS_INPUT 
 {
 	// Position
-	float4 position			: POSITION; 
+	float4 pos			: POSITION; 
 	// Normal
-	float3 normal			: NORMAL;
+	float3 normal		: NORMAL;
 };
 
 struct VS_OUTPUT
 {
 	// Position
-    float4 position			: SV_POSITION;
-	
-	// Diffusive component 
-	float  diffusiveFactor	: TEXCOORD0;
-	// Specular component
-	float  specularFactor	: TEXCOORD1;
+    float4 pos			: SV_POSITION;
+	// Normal
+	float3 normal		: NORMAL;
+	// Normal in world coordinates
+	float3 worldPos		: TEXCOORD0;
 };
 
 
@@ -42,45 +46,28 @@ struct VS_OUTPUT
 
 VS_OUTPUT ToonShadingVS( VS_INPUT input )
 {
-    VS_OUTPUT output			= ( VS_OUTPUT )0;
+    VS_OUTPUT output = ( VS_OUTPUT )0;
 
-	// Calculate output position
-	output.position				= mul( worldViewProj, input.position );
+	float4 worldPos		= mul( worldMatrix, input.pos );
+	float4 cameraPos	= mul( viewMatrix, worldPos );
+	output.pos			= mul( projMatrix, cameraPos );
 
-	// Calculate light vector
-	float3 N					= normalize( input.normal );
-	float3 L					= normalize( lightPosition - input.position.xyz );
-	
-	// Calculate diffuse component
-	output.diffusiveFactor		= max( dot( N, L ), 0 );
+	float3 worldNormal	= normalize( mul( input.normal, (float3x3)worldMatrix ) );
+	output.normal		= worldNormal;
 
-	float3 E					= normalize( eyePosition - input.position.xyz );
-
-	if ( output.diffusiveFactor == 0 ) 
-	{
-		// Cancel specular if diffuse is 0
-		output.specularFactor	= 0;
-	}
-	else 
-	{
-		// Calculate specular component
-		float3 H				= normalize( L + E );
-		output.specularFactor	= pow( max( dot( N, H ), 0 ), shininess );
-	}
+	output.worldPos		= worldPos.xyz;
 
     return output;
 }
 
 
 // ----------------------------------------------------------
-// Texture samplers and light parameters
+// Texture samplers
 // ----------------------------------------------------------
 
-uniform sampler1D diffusiveGradient	: register( s0 );
-uniform sampler1D specularGradient	: register( s1 );
+sampler gradientSampler : register( s0 );
 
-uniform float4 diffusiveComponent;
-uniform float4 specularComponent;
+sampler colorSampler	: register( s1 );
 
 
 // ----------------------------------------------------------
@@ -89,11 +76,24 @@ uniform float4 specularComponent;
 
 float4 ToonShadingPS( VS_OUTPUT input ) : SV_Target
 {
-	float diffusiveFactor	= tex1D(diffusiveGradient, input.diffusiveFactor).x;
-	float specularFactor	= tex1D(specularGradient, input.specularFactor).x;
+	input.normal		= normalize( input.normal );
 
-	float4 color			= ((diffusiveComponent * diffusiveFactor) + 
-								(specularComponent * specularFactor));
+	float3 toLight		= lightPosition - input.worldPos; 
+	float3 lightDir		= normalize( toLight );
+
+	// float3 toCamera = cameraPosition - input.worldPos;
+	// float3 cameraDir	= normalize( toCamera );
+
+	// float cameraAngle = dot( input.normal, cameraDir );
+
+	// if ( abs( cameraAngle ) < 0.2f )
+	//		return float4( 0.0f, 0.0f, 0.0f, 1.0f );
+
+	float gradientCoord = clamp( dot( input.normal, lightDir ), 0.0f, 1.0f );
+
+	float4 color		= tex1D( gradientSampler, gradientCoord );
+
+	color				= color * defaultColor;
 
 	return color;
 }

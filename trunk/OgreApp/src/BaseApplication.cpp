@@ -99,6 +99,7 @@ void BaseApplication::createCamera(void)
     mCamera->setNearClipDistance(5);
 
     mCameraMan = new OgreBites::SdkCameraMan(mCamera); // Create a default camera controller
+	mCameraMan->setStyle(OgreBites::CS_MANUAL);
 }
 
 //-------------------------------------------------------------------------------------
@@ -130,33 +131,28 @@ void BaseApplication::createFrameListener(void)
     mTrayMgr = new OgreBites::SdkTrayManager("InterfaceName", mWindow, mMouse, this);
     mTrayMgr->showFrameStats(OgreBites::TL_BOTTOMLEFT);
     mTrayMgr->showLogo(OgreBites::TL_BOTTOMRIGHT);
-    //mTrayMgr->hideCursor();
+    mTrayMgr->showCursor();
 
     // create a params panel for displaying sample details
     Ogre::StringVector items;
-    items.push_back("cam.pX");
-    items.push_back("cam.pY");
-    items.push_back("cam.pZ");
+	items.push_back("CAMERA POSITION");
+    items.push_back("X");
+    items.push_back("Y");
+    items.push_back("Z");
     items.push_back("");
-    items.push_back("cam.oW");
-    items.push_back("cam.oX");
-    items.push_back("cam.oY");
-    items.push_back("cam.oZ");
+	items.push_back("CAMERA ORIENTATION");
+    items.push_back("W");
+    items.push_back("X");
+    items.push_back("Y");
+    items.push_back("Z");
     items.push_back("");
     items.push_back("Filtering");
     items.push_back("Poly Mode");
 
     mDetailsPanel = mTrayMgr->createParamsPanel(OgreBites::TL_NONE, "DetailsPanel", 200, items);
-    mDetailsPanel->setParamValue(9, "Bilinear");
-    mDetailsPanel->setParamValue(10, "Solid");
+    mDetailsPanel->setParamValue(11, "Bilinear");
+    mDetailsPanel->setParamValue(12, "Solid");
     mDetailsPanel->hide();
-
-	// create a check box to toggle light movement
-	mMoveLight = mTrayMgr->createCheckBox(OgreBites::TL_TOPLEFT, "MoveLight", "Move Light");
-	mMoveLight->setChecked(true);
-	mMoveLight->show();
-
-	mTrayMgr->showCursor();
 
     mRoot->addFrameListener(this);
 }
@@ -171,7 +167,7 @@ void BaseApplication::createViewports(void)
 {
     // Create one viewport, entire window
     Ogre::Viewport* vp = mWindow->addViewport(mCamera);
-    vp->setBackgroundColour(Ogre::ColourValue(1,1,0.5));
+    vp->setBackgroundColour(Ogre::ColourValue(1,0.5,0));
 
     // Alter the camera aspect ratio to match the viewport
     mCamera->setAspectRatio(
@@ -213,6 +209,9 @@ void BaseApplication::createResourceListener(void)
 void BaseApplication::loadResources(void)
 {
     Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
+
+	Ogre::ResourceManager::ResourceMapIterator iter = Ogre::FontManager::getSingleton().getResourceIterator();
+	while ( iter.hasMoreElements() ) { iter.getNext()->load(); }
 }
 
 //-------------------------------------------------------------------------------------
@@ -257,10 +256,10 @@ bool BaseApplication::setup(void)
     // Load resources
     loadResources();
 
+	createFrameListener();
+
     // Create the scene
     createScene();
-
-    createFrameListener();
     
 	return true;
 };
@@ -285,13 +284,13 @@ bool BaseApplication::frameRenderingQueued(const Ogre::FrameEvent& evt)
         mCameraMan->frameRenderingQueued(evt);   // if dialog isn't up, then update the camera
         if (mDetailsPanel->isVisible())   // if details panel is visible, then update its contents
         {
-            mDetailsPanel->setParamValue(0, Ogre::StringConverter::toString(mCamera->getDerivedPosition().x));
-            mDetailsPanel->setParamValue(1, Ogre::StringConverter::toString(mCamera->getDerivedPosition().y));
-            mDetailsPanel->setParamValue(2, Ogre::StringConverter::toString(mCamera->getDerivedPosition().z));
-            mDetailsPanel->setParamValue(4, Ogre::StringConverter::toString(mCamera->getDerivedOrientation().w));
-            mDetailsPanel->setParamValue(5, Ogre::StringConverter::toString(mCamera->getDerivedOrientation().x));
-            mDetailsPanel->setParamValue(6, Ogre::StringConverter::toString(mCamera->getDerivedOrientation().y));
-            mDetailsPanel->setParamValue(7, Ogre::StringConverter::toString(mCamera->getDerivedOrientation().z));
+            mDetailsPanel->setParamValue(1, Ogre::StringConverter::toString(mCamera->getDerivedPosition().x));
+            mDetailsPanel->setParamValue(2, Ogre::StringConverter::toString(mCamera->getDerivedPosition().y));
+            mDetailsPanel->setParamValue(3, Ogre::StringConverter::toString(mCamera->getDerivedPosition().z));
+            mDetailsPanel->setParamValue(6, Ogre::StringConverter::toString(mCamera->getDerivedOrientation().w));
+            mDetailsPanel->setParamValue(7, Ogre::StringConverter::toString(mCamera->getDerivedOrientation().x));
+            mDetailsPanel->setParamValue(8, Ogre::StringConverter::toString(mCamera->getDerivedOrientation().y));
+            mDetailsPanel->setParamValue(9, Ogre::StringConverter::toString(mCamera->getDerivedOrientation().z));
         }
     }
 
@@ -326,7 +325,7 @@ bool BaseApplication::keyPressed( const OIS::KeyEvent &arg )
         Ogre::TextureFilterOptions tfo;
         unsigned int aniso;
 
-        switch (mDetailsPanel->getParamValue(9).asUTF8()[0])
+        switch (mDetailsPanel->getParamValue(11).asUTF8()[0])
         {
         case 'B':
             newVal = "Trilinear";
@@ -351,7 +350,7 @@ bool BaseApplication::keyPressed( const OIS::KeyEvent &arg )
 
         Ogre::MaterialManager::getSingleton().setDefaultTextureFiltering(tfo);
         Ogre::MaterialManager::getSingleton().setDefaultAnisotropy(aniso);
-        mDetailsPanel->setParamValue(9, newVal);
+        mDetailsPanel->setParamValue(11, newVal);
     }
     else if (arg.key == OIS::KC_R)   // cycle polygon rendering mode
     {
@@ -374,9 +373,9 @@ bool BaseApplication::keyPressed( const OIS::KeyEvent &arg )
         }
 
         mCamera->setPolygonMode(pm);
-        mDetailsPanel->setParamValue(10, newVal);
+        mDetailsPanel->setParamValue(12, newVal);
     }
-    else if(arg.key == OIS::KC_F5)   // refresh all textures
+    else if (arg.key == OIS::KC_F5)   // refresh all textures
     {
         Ogre::TextureManager::getSingleton().reloadAll();
     }
@@ -409,6 +408,13 @@ bool BaseApplication::mouseMoved( const OIS::MouseEvent &arg )
 bool BaseApplication::mousePressed( const OIS::MouseEvent &arg, OIS::MouseButtonID id )
 {
     if (mTrayMgr->injectMouseDown(arg, id)) return true;
+
+	if (mDragLook && id == OIS::MB_Left)
+	{
+		mCameraMan->setStyle(OgreBites::CS_FREELOOK);
+		mTrayMgr->hideCursor();
+	}
+
     mCameraMan->injectMouseDown(arg, id);
     return true;
 }
@@ -416,6 +422,13 @@ bool BaseApplication::mousePressed( const OIS::MouseEvent &arg, OIS::MouseButton
 bool BaseApplication::mouseReleased( const OIS::MouseEvent &arg, OIS::MouseButtonID id )
 {
     if (mTrayMgr->injectMouseUp(arg, id)) return true;
+
+	if (mDragLook && id == OIS::MB_Left)
+	{
+		mCameraMan->setStyle(OgreBites::CS_MANUAL);
+		mTrayMgr->showCursor();
+	}
+
     mCameraMan->injectMouseUp(arg, id);
     return true;
 }
@@ -447,4 +460,20 @@ void BaseApplication::windowClosed(Ogre::RenderWindow* rw)
             mInputManager = 0;
         }
     }
+}
+
+void BaseApplication::setDragLook(bool enabled)
+{
+	if (enabled)
+	{
+		mCameraMan->setStyle(OgreBites::CS_MANUAL);
+		mTrayMgr->showCursor();
+		mDragLook = true;
+	}
+	else
+	{
+		mCameraMan->setStyle(OgreBites::CS_FREELOOK);
+		mTrayMgr->hideCursor();
+		mDragLook = false;
+	}
 }

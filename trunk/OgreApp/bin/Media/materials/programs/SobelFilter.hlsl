@@ -8,17 +8,19 @@ uniform extern float viewportWidth;
 uniform extern float viewportHeight;
 
 // Outline properties (thickness and threshold)
-uniform extern float thickness; // = 1.5f;
-uniform extern float threshold; // = 1.0f;
+uniform extern float thickness;
+uniform extern float threshold;
 
-sampler inputTexture : register( s0 );
+uniform extern bool coloredMode;
+
+// ----------------------------------------------------------
+// Input/Output structures
+// ----------------------------------------------------------
 
 struct VS_INPUT
 {
 	// Position
 	float4 position			: POSITION; 
-	// Normal
-	//float3 normal		: NORMAL;
 	// Texture coordinates
     float2 textureCoord		: TEXCOORD0;
 };
@@ -30,53 +32,66 @@ struct VS_OUTPUT
 	// Texture coordinates
 	float2 textureCoord		: TEXCOORD0;
 };
- 
-float getGray( float4 c )
-{
-    return dot( c.rgb, ( (0.33333).xxx) ) );
-}
 
-VS_OUTPUT SobelFilterVS( VS_INPUT_SF input )
+
+// ----------------------------------------------------------
+// Vertex shader
+// ----------------------------------------------------------
+
+VS_OUTPUT SobelFilterVS( VS_INPUT input )
 {
 	VS_OUTPUT output = (VS_OUTPUT)0;
 
 	output.position		= mul( worldViewProj, input.position );
 
-	ouput.textureCoord	= input.textureCoord;
+	output.textureCoord	= input.textureCoord;
 	
 	return output;
 }
 
-float4 getColor( float2 textureCoord )
-{
-	float Thickness = 1.5f;
-	float Threshold = 0.2f;
 
-	float4 color			= tex2D( inputTexture, textureCoord );	
+// ----------------------------------------------------------
+// Texture sampler
+// ----------------------------------------------------------
+
+sampler inputTexture : register( s0 );
+
+
+// ----------------------------------------------------------
+// Utility functions
+// ----------------------------------------------------------
+
+float getGray( float4 c )
+{
+    return dot( c.rgb, ( (0.33333).xxx) );
+}
+
+float4 getEdge( float2 textureCoord )
+{
 	float2 quadScreenSize	= float2( viewportWidth, viewportHeight );
 
 	float2 xOffset	= float2( thickness / quadScreenSize.x, 0.0f );
-    float2 yOffset	= float2( 0.0f, Thickness / quadScreenSize.y );
+    float2 yOffset	= float2( 0.0f, thickness / quadScreenSize.y );
     float2 uv		= textureCoord.xy;
-    float2 pp		= uv - oy;
+    float2 pp		= uv - yOffset;
     
 	float4 cc;
 	
-	cc = tex2D( inputTexture, pp - ox );	float g00 = getGray( cc );
-	cc = tex2D( inputTexture, pp );			float g01 = getGray( cc );
-	cc = tex2D( inputTexture, pp + ox );	float g02 = getGray( cc );
+	cc = tex2D( inputTexture, pp - xOffset );	float g00 = getGray( cc );
+	cc = tex2D( inputTexture, pp );				float g01 = getGray( cc );
+	cc = tex2D( inputTexture, pp + xOffset );	float g02 = getGray( cc );
     
 	pp = uv;
     
-	cc = tex2D( inputTexture, pp - ox );	float g10 = getGray( cc );
-    cc = tex2D( inputTexture, pp );			float g11 = getGray( cc );
-    cc = tex2D( inputTexture, pp + ox );	float g12 = getGray( cc );
+	cc = tex2D( inputTexture, pp - xOffset );	float g10 = getGray( cc );
+    cc = tex2D( inputTexture, pp );				float g11 = getGray( cc );
+    cc = tex2D( inputTexture, pp + xOffset );	float g12 = getGray( cc );
     
-	p = uv + oy;
+	pp = uv + yOffset;
 
-    cc = tex2D( inputTexture, pp - ox );	float g20 = getGray( cc );
-	cc = tex2D( inputTexture, pp );			float g21 = getGray( cc );
-	cc = tex2D( inputTexture, pp + ox );	float g22 = getGray( cc );
+    cc = tex2D( inputTexture, pp - xOffset );	float g20 = getGray( cc );
+	cc = tex2D( inputTexture, pp );				float g21 = getGray( cc );
+	cc = tex2D( inputTexture, pp + xOffset );	float g22 = getGray( cc );
     
 	// Sobel filter kernel
 	float K00	= -1;
@@ -121,10 +136,19 @@ float4 getColor( float2 textureCoord )
 		return float4( 0.0f, 0.0f, 0.0f, 1.0f );
 	}
 
-	return color * float4( 1.0f, 1.0f, 1.0f, 1.0f );
+	return float4( 1.0f, 1.0f, 1.0f, 1.0f );
 }
+
+
+// ----------------------------------------------------------
+// Pixel shader
+// ----------------------------------------------------------
 
 float4 SobelFilterPS( VS_OUTPUT input ) : SV_Target
 {
-	return getColor( input.textureCoord );
+	float4 color = tex2D( inputTexture, input.textureCoord );
+
+	color = color * getEdge( input.textureCoord );
+
+	return color;
 }

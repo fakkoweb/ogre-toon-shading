@@ -110,8 +110,6 @@ void OgreApp::createScene(void)
 	mHead->setMaterialName("CelShading");
 
 	// Set our compositor (based on a sobel filter, in order to detect edges)
-	mViewport = mCamera->getViewport();
-
 	Ogre::CompositorInstance* comp = 
 		Ogre::CompositorManager::getSingleton().addCompositor(mViewport, "ToonShadingCompositor");
 
@@ -120,7 +118,6 @@ void OgreApp::createScene(void)
 
 	Ogre::CompositorManager::getSingleton().setCompositorEnabled(mViewport, "ToonShadingCompositor", false);
 
-	mTechniqueDetail->setParamValue(0, "BASIC CELSHADING");
 	mCurrentTechnique = CELSHADING;
 }
 
@@ -130,9 +127,10 @@ void OgreApp::createFrameListener(void)
 	BaseApplication::createFrameListener();
 
 	Ogre::StringVector desc;
-	desc.push_back("Current technique");
+	desc.push_back("Curr. technique (press 'C' to switch)");
 
 	mTechniqueDetail = mTrayMgr->createParamsPanel(OgreBites::TL_TOPLEFT, "TechniqueDetail", 480, desc);
+	mTechniqueDetail->setParamValue(0, "BASIC CELSHADING");
 
 	// Create a check box to toggle light movement
 	mMoveLight = mTrayMgr->createCheckBox(OgreBites::TL_TOPLEFT, "MoveLight", "Stop/Resume light movement (Key 'L')");
@@ -191,7 +189,7 @@ bool OgreApp::keyPressed(const OIS::KeyEvent &arg)
 
 			Ogre::CompositorManager::getSingleton().setCompositorEnabled(mViewport, "ToonShadingCompositor", true);
 
-			mTechniqueDetail->setParamValue(0, "CELSHADING WITH POST-PROCESS EDGE DET.");
+			mTechniqueDetail->setParamValue(0, "CELSHADING WITH PP EDGE DET.");
 			mCurrentTechnique = SOBEL_FILTER;
 
 			mTrayMgr->moveWidgetToTray(mThicknessSlider, OgreBites::TL_TOPLEFT);

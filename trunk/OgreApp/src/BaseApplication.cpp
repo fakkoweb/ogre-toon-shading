@@ -166,12 +166,12 @@ void BaseApplication::destroyScene(void)
 void BaseApplication::createViewports(void)
 {
     // Create one viewport, entire window
-    Ogre::Viewport* vp = mWindow->addViewport(mCamera);
-    vp->setBackgroundColour(Ogre::ColourValue(1,0.5,0));
+    mViewport = mWindow->addViewport(mCamera);
+    mViewport->setBackgroundColour(Ogre::ColourValue(1,0.5,0));
 
     // Alter the camera aspect ratio to match the viewport
     mCamera->setAspectRatio(
-        Ogre::Real(vp->getActualWidth()) / Ogre::Real(vp->getActualHeight()));
+        Ogre::Real(mViewport->getActualWidth()) / Ogre::Real(mViewport->getActualHeight()));
 }
 
 //-------------------------------------------------------------------------------------
@@ -256,10 +256,10 @@ bool BaseApplication::setup(void)
     // Load resources
     loadResources();
 
-	createFrameListener();
+	// Create the scene
+	createScene();
 
-    // Create the scene
-    createScene();
+	createFrameListener();
     
 	return true;
 };

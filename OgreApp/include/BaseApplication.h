@@ -82,6 +82,8 @@ protected:
     Ogre::String mResourcesCfg;
     Ogre::String mPluginsCfg;
 
+	Ogre::Viewport* mViewport;
+
     // OgreBites
     OgreBites::SdkTrayManager* mTrayMgr;
     OgreBites::SdkCameraMan* mCameraMan;     // basic camera controller
@@ -92,7 +94,7 @@ protected:
 
     //OIS Input devices
     OIS::InputManager* mInputManager;
-    OIS::Mouse*    mMouse;
+    OIS::Mouse* mMouse;
     OIS::Keyboard* mKeyboard;
 
 	bool mDragLook;                     // click and drag to free-look

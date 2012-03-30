@@ -41,8 +41,6 @@ protected:
 
 	virtual void sliderMoved(OgreBites::Slider* slider);
 
-	Ogre::Viewport*			mViewport;
-
 	Ogre::SceneNode*		mLightPivot;
 	Ogre::Entity*			mHead;
 
